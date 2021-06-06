@@ -11,9 +11,7 @@ def chargegrille(fichier):  # script chargement de grille à partir d'un fichier
         for line in read_file.readlines():
             L = list(line)
             L.remove('\n')
-            for index, item in enumerate(L):
-                if item == '_':
-                    L[index] = None
+
             indexes.append(L)
 
         return(indexes)
@@ -27,32 +25,26 @@ def checkdata(txtfile):
 
     # there needs to be some data
     if len(data) <= 0 or len(data[0]) <= 0:
-        print("Please enter data.")
-        return False
+        raise Exception("Please enter correct data.")
 
     # determine width and height
     w, h = len(data[0]), len(data)
 
-    # check every line for its length and characters
+    # check la longueur deslignes et les caracteres non autorisés
     for y in range(h):
         if len(data[y]) != w:
-            print("Incorrect data width in line %d." % y)
-            return False
+            raise Exception("Incorrect data width in line %d." % y)
         else:
             for x in range(w):
                 if data[y][x] not in ("_", "0", "1", "2", "3"):
-                    print("Unknown character '%s' in line %d, row %d." % (data[y][x], y, x))
-                    return False
+                    raise Exception("Unknown character '%s' in line %d, row %d." % (data[y][x], y, x))
 
     # slither should not be too small
     if w < 4 or h < 4:
-        print("Slither too small, solve it yourself!")
-        return False
+        raise Exception("Grid too small, you can solve it yourself! Just do it")
 
-    # data was checked
+    print("C'est bon tu peux commencer")
     return True
-
-
 
 # consigne  : Afin de ne pas avoir des doublons d'informations, on choisira toujours
 # de représenter les segments dans le dictionnaire en donnant en premier le sommet le plus petit
@@ -190,17 +182,69 @@ def voisins(sommet):
 
 
 
-def cond2victoire(etat,segment) :
+def longueurboucle(etat,segment) :
     path=[]
     depart  = segment[0]
     precedent = depart
     courant = segment[1]
     while (courant != depart) :
+        segtraces = segments_traces(etat, depart)
         path.append(courant)
-        if len(segments_traces(etat, depart)) != 2 :
+        if len(segtraces) != 2 :
             return None
         else :
-            adjacents = list(voisins(sommet))
-            adjacents = adjacents.pop(precedent)
             precedent = courant
-            courant = random.choice(adjacents)
+            courant = autrepoint(precedent,(segments_traces(etat,courant)))
+    return len(path)
+
+def cond2victoire(etat,sommet =(1,1)) :
+#On démarre la boucle pour savoir si la boucle est fermé à partir du premier segment tracé du dictionnaire etat
+    segs = segments_traces(etat,sommet)
+    segment = segmenttracés[0]     # choix de commencer par le point 1,1
+    segmenttracétotal = 0
+    for x in etat.keys():
+        if etat[x]==1 :
+            segmenttracétotal += 1
+    if longueurboucle(etat,segment) is not None :
+        return longueurboucle(etat,segment) == segmenttracétotal
+
+
+def AutreSommet(segment,sommet):
+    if segment[0] == sommet :
+        return segment[1]
+    else :
+        return segment[0]
+
+def segmentssuivnats(etat,sommet1,sommet2):
+    L=list()
+    for x in voisins(sommet2):
+        if x == sommet1 :
+            pass
+        else:
+            for i in range(len(voisins(sommet2))):
+                L.append((x,voisins(sommet2)[i]))
+
+
+def Recursivesolver(indices, etat, sommet):
+    # on vérifier d'abord si la boucle est fermé
+    for segment in etat :
+        if longueur_boucle(etat, next(iter(etat))) is not None:
+            # si oui, on vérifier alors si tt les indices sont satisfis
+            if cond1victoire(indices, etat):
+                return etat
+            else:
+                return None
+
+    # si c'est non, alors on continue de tester le chemin
+    dernier_seg = list(etat.keys())[-1]  # get le dernier segment
+#    segmentsuivant =
+    segment_suiv = Segments_suivant(indices.__len__(), Indices[0].__len__(), AutreSommet(dernier_seg, sommet), sommet)
+    for seg_sv in segment_suiv:
+        if est_vierge(etat, seg_sv):
+            tracer_segment(etat, seg_sv)
+            nouveau_etat = Recursivesolver(indices, etat, AutreSommet(seg_sv, sommet))
+            if nouveau_etat is not None:
+                return nouveau_etat
+            effacer_segment(etat, seg_sv)
+    return None
+
